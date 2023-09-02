@@ -1,0 +1,8 @@
+
+  
+  .content-container {
+    flex: 1;  /* allows this container to grow and take available space */
+    display: flex;
+    justify-content: center;  /* centers content horizontally */
+    align-items: center;  /* centers content vertically */
+  }
