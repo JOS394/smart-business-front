@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import NavBar from './components/AppBar'
+// import NavBar from './components/AppBar'
 import '../public/css/style.css'
 
 import Sidebar from "./components/Sidebar";
@@ -14,10 +14,9 @@ import AjustesInventario from './components/pages/InventoryItems/AjustesInventar
 
 function App() {
 
-
   return (
     <>
-       <div className="app-container">
+       <div className="app-container" >
       <Sidebar />
       <div className="content-container">
       <Routes>
