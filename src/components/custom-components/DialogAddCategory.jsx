@@ -6,8 +6,11 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
-const DialogAdd = ({ open, onClose, newCategory, handleInputChange, handleSubmit } ) =>{
+
+const DialogAdd = ({ open, onClose, newData, handleInputChange, handleSubmit } ) =>{
 
     return (
       <>
@@ -24,7 +27,7 @@ const DialogAdd = ({ open, onClose, newCategory, handleInputChange, handleSubmit
               label="Nombre"
               type="text"
               fullWidth
-              value={newCategory.nombre}
+              value={newData.nombre}
               onChange={handleInputChange}
             />
             <TextField 
@@ -33,9 +36,20 @@ const DialogAdd = ({ open, onClose, newCategory, handleInputChange, handleSubmit
               label="Descripción"
               type="text"
               fullWidth
-              value={newCategory.descripcion}
+              multiline
+              maxRows={4}
+              value={newData.descripcion}
               onChange={handleInputChange}
             />
+            <Select
+              fullWidth
+              name="status"
+              value={newData.status || 0} // Asegura un valor por defecto si es undefined
+              onChange={handleInputChange}
+              displayEmpty >
+              <MenuItem value={1}>Activo</MenuItem>
+              <MenuItem value={0}>Inactivo</MenuItem>
+            </Select>
           </DialogContent>
           <DialogActions>
             <Button onClick={onClose} color="primary">

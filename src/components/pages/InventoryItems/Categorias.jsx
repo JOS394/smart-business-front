@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import SearchInput from "../../custom-components/Search";
+import Chip from '@mui/material/Chip';
 import AddIcon from '@mui/icons-material/Add';
-import DialogAddCategories from '../../custom-components/DialogAdd';
+import DialogAddCategories from '../../custom-components/DialogAddCategory';
 import ButtonAddCategories from '../../custom-components/ButtonAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -23,22 +24,17 @@ function Categorias() {
     descripcion: ''
   });
 
-
+  const fetchData = async () => {
+    const {  data, error } = await supabase.from('categories').select('*');
+    if (error) {
+      console.error('Error cargando datos:', error);
+      return;
+    }
+    setRows(data);
+    setFilteredRows(data);
+  };
 
   useEffect(() => {
-    // Define una función asíncrona para obtener los datos
-    const fetchData = async () => {
-      const {  data, error } = await supabase
-        .from('categorias')
-        .select('*');
-      if (error) {
-        console.error('Error cargando datos:', error);
-        return;
-      }
-      setRows(data);
-      setFilteredRows(data);
-    };
-    // Llama a la función para obtener los datos
     fetchData();
   }, []); // Ejecuta solo una vez, al montar el componente
 
@@ -64,6 +60,12 @@ function Categorias() {
   }, [selectedCategory]);
 
   const handleOpen = () => {
+    setSelectedCategory(null);
+    setNewCategory({
+      nombre: '',
+      descripcion: '',
+      status: 0 // Valor por defecto cuando agregas una nueva categoría
+    });
     setOpen(true);
   };
 
@@ -73,29 +75,32 @@ function Categorias() {
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewCategory(prev => ({ ...prev, [name]: value }));
+    setNewCategory(prev => ({ ...prev, [name]: parseInt(value) || value })); // Parsea a entero si es necesario
   };
 
   const handleSubmit = async () => {
+    
     let data, error;
   
     if (selectedCategory) {
       // Actualización
       ({ data, error } = await supabase
-        .from('categorias')
+        .from('categories')
         .update({
           nombre: newCategory.nombre,
-          descripcion: newCategory.descripcion
+          descripcion: newCategory.descripcion,
+          status: newCategory.status
         })
         .match({ id: selectedCategory.id }));
     } else {
       // Inserción
       ({ data, error } = await supabase
-        .from('categorias')
+        .from('categories')
         .insert([
           { 
             nombre: newCategory.nombre,
-            descripcion: newCategory.descripcion
+            descripcion: newCategory.descripcion,
+            status: newCategory.status
           }
         ])
         .select());
@@ -108,12 +113,21 @@ function Categorias() {
   
     if (selectedCategory) {
       // Actualiza la lista de categorías en el estado
-      setRows(prevRows => prevRows.map(row => row.id === data[0].id ? data[0] : row));
+      if (data && data.length > 0) {
+        setRows(prevRows => {
+          if (!prevRows) {
+            return [data[0]];
+          }
+          return prevRows.map(row => row.id === data[0].id ? data[0] : row);
+        });
+      }
+      
+      // setRows(prevRows => prevRows.map(row => row.id === data[0].id ? data[0] : row));
       setSelectedCategory(null);  // Resetea la categoría seleccionada
     } else {
       setRows(prevRows => [...prevRows, ...data]);
     }
-  
+    fetchData();
     handleClose();
   };
   
@@ -121,7 +135,7 @@ function Categorias() {
 
   const handleDelete = async (categoryId) => {
     const { data, error } = await supabase
-        .from('categorias')
+        .from('categories')
         .delete()
         .match({ id: categoryId }); // Asume que cada categoría tiene un ID único
 
@@ -139,36 +153,47 @@ function Categorias() {
 
 const handleEditOpen = (category) => {
   setSelectedCategory(category);
+  setNewCategory({
+    nombre: category.nombre,
+    descripcion: category.descripcion,
+    status: category.status || 0 // Por si acaso no hay un valor definido, toma 0 como predeterminado
+  });
   setOpen(true);
 };
 
-  // Define las columnas según los campos de tu tabla
-  const columns = [
-    // { field: 'id', headerName: 'ID', width: 50 },
-    { field: 'nombre', headerName: 'Nombre', width: 300 },
-    { field: 'descripcion', headerName: 'Descripcion', width: 700 },
-    { field: 'status', headerName: 'Estado', width: 100 },
-    {
-      field: 'actions',
-      headerName: 'Acciones',
-      width: 150,
-      renderCell: (params) => (
-          <IconButton onClick={() => handleDelete(params.row.id)} color="secondary">
-              <DeleteIcon />
-          </IconButton>
-      ),    
+const columns = [
+  // ... tus otras columnas aquí
+  { field: 'nombre', headerName: 'Nombre', width: 325 },
+  { field: 'descripcion', headerName: 'Descripcion', width: 700 },
+  { 
+    field: 'status', 
+    headerName: 'Estado', 
+    width: 100,
+    renderCell: (params) => {
+      if (params.value === 1) {
+        return <Chip label="Activo" color="primary" style={{backgroundColor: 'green'}} />;
+      } else {
+        return <Chip label="Inactivo" color="secondary" style={{backgroundColor: 'red'}} />;
+      }
+    }
   },
   {
-    field: 'editAction',
-    headerName: 'Editar',
-    width: 150,
-    renderCell: (params) => (
-      <IconButton onClick={() => handleEditOpen(params.row)} color="primary">
-        <EditIcon />
-      </IconButton>
-    ),
+      field: 'actions',
+      headerName: 'Acciones',
+      width: 100,
+      renderCell: (params) => (
+          <>
+              <IconButton onClick={() => handleDelete(params.row.id)} color="secondary">
+                  <DeleteIcon />
+              </IconButton>
+              <IconButton onClick={() => handleEditOpen(params.row)} color="primary">
+                  <EditIcon />
+              </IconButton>
+          </>
+      ),
   },
-  ];
+];
+
 
   return (
     <>
@@ -176,7 +201,7 @@ const handleEditOpen = (category) => {
     <DialogAddCategories 
       open={open}
       onClose={handleClose}
-      newCategory={newCategory}
+      newData={newData}
       handleInputChange={handleInputChange}
       handleSubmit={handleSubmit}
     />
